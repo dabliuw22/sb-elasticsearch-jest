@@ -7,4 +7,6 @@ import com.leysoft.document.Product;
 public interface ProductRepository {
 	
 	public List<Product> findByStoreId(String storeId);
+	
+	public List<Product> findByName(String name, String... fields);
 }

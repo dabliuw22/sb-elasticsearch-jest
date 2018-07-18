@@ -19,4 +19,9 @@ public class ProductServiceImp implements ProductService {
 	public List<Product> findByStoreId(String storeId) {
 		return productRepository.findByStoreId(storeId);
 	}
+	
+	@Override
+	public List<Product> findByName(String name, String... fields) {
+		return productRepository.findByName(name, fields);
+	}
 }
