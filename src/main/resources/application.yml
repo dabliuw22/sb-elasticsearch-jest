@@ -1,0 +1,10 @@
+elasticsearch:
+  cluster-nodes: http://search-available-23vj7rxvnaxdazrcwdkgndahau.us-east-1.es.amazonaws.com
+  index: hometype_store_products
+  type: product
+  multi-threaded: true
+  default-max-connection: 2
+  max-connection: 10
+  time-out:
+    read: 1000000
+    connection: 1200000
