@@ -44,6 +44,6 @@ public class ProductRepositoryImp implements ProductRepository {
 		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
 		searchSourceBuilder.query(matchQuery).fetchSource(fields, null);
 		String query = searchSourceBuilder.toString();
-		return Util.queryResult(jestClient, query, index, type, Product.class);
+		return Util.queryResult(jestClient, query, index, type);
 	}
 }

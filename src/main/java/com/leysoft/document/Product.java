@@ -8,7 +8,7 @@ public class Product {
 	
 	private Double price;
 	
-	private Long storeId;
+	private Double storeId;
 
 	public String getId() {
 		return id;
@@ -34,11 +34,11 @@ public class Product {
 		this.price = price;
 	}
 
-	public Long getStoreId() {
+	public Double getStoreId() {
 		return storeId;
 	}
 
-	public void setStoreId(Long storeId) {
+	public void setStoreId(Double storeId) {
 		this.storeId = storeId;
 	}
 }
