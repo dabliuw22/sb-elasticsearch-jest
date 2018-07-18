@@ -1,5 +1,5 @@
 elasticsearch:
-  cluster-nodes: http://search-available-23vj7rxvnaxdazrcwdkgndahau.us-east-1.es.amazonaws.com
+  cluster-nodes: localhost:9300
   index: hometype_store_products
   type: product
   multi-threaded: true
