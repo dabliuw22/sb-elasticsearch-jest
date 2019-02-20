@@ -5,7 +5,7 @@ import java.util.List;
 
 import com.leysoft.document.Product;
 
-public interface ProductRepository {
+public interface ProductRepository extends GenericRepository<Product> {
 
     public List<Product> findAllByStoreId(String storeId);
 

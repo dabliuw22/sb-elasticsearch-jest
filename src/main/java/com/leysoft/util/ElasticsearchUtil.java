@@ -3,6 +3,7 @@ package com.leysoft.util;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,14 +16,11 @@ import org.springframework.core.io.ResourceLoader;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import com.leysoft.document.Product;
-import com.leysoft.dto.ScrollResponse;
 
 import io.searchbox.client.JestClient;
 import io.searchbox.client.JestResult;
 import io.searchbox.core.Search;
 import io.searchbox.core.SearchResult;
-import io.searchbox.core.SearchScroll;
-import io.searchbox.params.Parameters;
 
 public class ElasticsearchUtil {
 
@@ -35,53 +33,6 @@ public class ElasticsearchUtil {
         return String.format(query, values);
     }
 
-    public static <T> List<T> queryResultByScrollId(JestClient client, String scrollId,
-            String scroll, Long size, Class<T> clazz) {
-        List<T> resultQuery = null;
-        try {
-            LOGGER.info("Try get result scroll");
-            SearchScroll searchScroll = new SearchScroll.Builder(scrollId, scroll).build();
-            JestResult result = client.execute(searchScroll);
-            resultQuery = resultToList(result, clazz);
-            LOGGER.info("result: {}", resultQuery);
-        } catch (IOException e) {
-            LOGGER.error("Error obtain... ", e);
-            resultQuery = new ArrayList<>();
-        }
-        return resultQuery;
-    }
-
-    public static <T> ScrollResponse<T> getScroll(JestClient client, String query, String index,
-            String type, String scroll, Long size, Class<T> clazz) {
-        ScrollResponse<T> resultScroll;
-        try {
-            Search search = new Search.Builder(query).addIndex(index).addType(type)
-                    .setParameter(Parameters.SCROLL, scroll).setParameter(Parameters.SIZE, size)
-                    .build();
-            JestResult result = client.execute(search);
-            resultScroll =
-                    new ScrollResponse<T>(result.getJsonObject().get("_scroll_id").getAsString(),
-                            resultToList(result, clazz));
-        } catch (Exception e) {
-            resultScroll = null;
-        }
-        return resultScroll;
-    }
-
-    public static <T> List<T> queryResult(JestClient client, String query, String index,
-            String type, Class<T> clazz) {
-        LOGGER.info("query -> {}", query);
-        List<T> resultQuery = null;
-        try {
-            Search search = new Search.Builder(query).addIndex(index).addType(type).build();
-            JestResult result = client.execute(search);
-            resultQuery = resultToList(result, clazz);
-        } catch (IOException e) {
-            resultQuery = new ArrayList<>();
-        }
-        return resultQuery;
-    }
-
     public static List<Product> queryResult(JestClient client, String query, String index,
             String type) {
         LOGGER.info("query -> {}", query);
@@ -91,7 +42,7 @@ public class ElasticsearchUtil {
             SearchResult result = client.execute(search);
             resultQuery = resultToList(result);
         } catch (IOException e) {
-            resultQuery = new ArrayList<>();
+            resultQuery = Collections.emptyList();
         }
         return resultQuery;
     }

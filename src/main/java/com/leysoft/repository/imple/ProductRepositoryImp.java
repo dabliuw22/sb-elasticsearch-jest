@@ -52,27 +52,27 @@ public class ProductRepositoryImp implements ProductRepository {
     @Override
     public List<Product> findAllByStoreId(String storeId) {
         String query = ElasticsearchUtil.queryReplace(QUERY_FIND_BY_STORE_ID, storeId);
-        return ElasticsearchUtil.queryResult(jestClient, query, index, type, Product.class);
+        return findAll(jestClient, query, index, type, Product.class);
     }
 
     @Override
     public List<Product> findAllByStoreIdScroll(String storeId, Long size) {
         String query = ElasticsearchUtil.queryReplace(QUERY_FIND_BY_STORE_ID, storeId);
         List<Product> result = new ArrayList<>();
-        ScrollResponse<Product> scroll = ElasticsearchUtil.getScroll(jestClient, query, index, type,
+        ScrollResponse<Product> scroll = findScroll(jestClient, query, index, type,
                 scrollMinutesToLive, size, Product.class);
-        result.addAll(scroll.getResults());
-        List<Product> temporalResult = new ArrayList<>();
-        do {
-            temporalResult = Objects.nonNull(scroll.getScrollId())
-                    ? ElasticsearchUtil.queryResultByScrollId(jestClient, scroll.getScrollId(),
-                            scrollMinutesToLive, size, Product.class)
+        List<Product> temporalResult =
+                Objects.nonNull(scroll) && Objects.nonNull(scroll.getScrollId())
+                        ? scroll.getResults()
+                        : Collections.emptyList();
+        while (!temporalResult.isEmpty()) {
+            result.addAll(temporalResult);
+            scroll = findByScrollId(jestClient, scroll.getScrollId(), scrollMinutesToLive,
+                    Product.class);
+            temporalResult = Objects.nonNull(scroll) && Objects.nonNull(scroll.getScrollId())
+                    ? scroll.getResults()
                     : Collections.emptyList();
-            if (!temporalResult.isEmpty()) {
-                result.addAll(temporalResult);
-            }
         }
-        while (!temporalResult.isEmpty());
         return result;
     }
 
@@ -99,8 +99,8 @@ public class ProductRepositoryImp implements ProductRepository {
             query = ElasticsearchUtil.queryReplace(query, from, size, name, price);
             result = ElasticsearchUtil.queryResult(jestClient, query, index, type);
         } catch (IOException e) {
-            result = new ArrayList<>();
+            LOGGER.info("Error executing the query lte price... ", e);
         }
-        return result;
+        return Objects.nonNull(result) ? result : Collections.emptyList();
     }
 }
