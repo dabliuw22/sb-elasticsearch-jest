@@ -46,4 +46,10 @@ public class Product {
     public void setStoreId(Long storeId) {
         this.storeId = storeId;
     }
+
+    @Override
+    public String toString() {
+        return "Product [id=" + id + ", name=" + name + ", price=" + price + ", storeId=" + storeId
+                + "]";
+    }
 }

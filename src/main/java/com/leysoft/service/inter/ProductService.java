@@ -9,6 +9,8 @@ public interface ProductService {
 
     public List<Product> findByStoreId(String storeId);
 
+    public List<Product> findByStoreIdScroll(String storeId);
+
     public List<Product> findByName(String name, String... fields);
 
     public List<Product> findByNameAndLtePrice(String name, Double price, int from, int size);

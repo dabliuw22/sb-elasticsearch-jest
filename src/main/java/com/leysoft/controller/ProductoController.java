@@ -29,11 +29,20 @@ public class ProductoController {
 
     @GetMapping(
             value = {
-                "/store-id/{storeId}"
+                "/store-id/{store-id}"
             })
     public ResponseEntity<List<Product>> getByStoreId(@PathVariable(
-            name = "storeId") Long storeId) {
+            name = "store-id") Long storeId) {
         return ResponseEntity.ok(productService.findByStoreId(storeId.toString()));
+    }
+
+    @GetMapping(
+            value = {
+                "/store-id/scroll/{store-id}"
+            })
+    public ResponseEntity<List<Product>> getScrollByStoreId(@PathVariable(
+            name = "store-id") Long storeId) {
+        return ResponseEntity.ok(productService.findByStoreIdScroll(storeId.toString()));
     }
 
     @PostMapping(

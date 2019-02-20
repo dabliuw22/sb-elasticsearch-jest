@@ -15,20 +15,57 @@ import org.springframework.core.io.ResourceLoader;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import com.leysoft.document.Product;
+import com.leysoft.dto.ScrollResponse;
 
 import io.searchbox.client.JestClient;
+import io.searchbox.client.JestResult;
 import io.searchbox.core.Search;
 import io.searchbox.core.SearchResult;
+import io.searchbox.core.SearchScroll;
+import io.searchbox.params.Parameters;
 
-public class Util {
+public class ElasticsearchUtil {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Util.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ElasticsearchUtil.class);
 
-    private Util() {
+    private ElasticsearchUtil() {
     }
 
     public static String queryReplace(String query, Object... values) {
         return String.format(query, values);
+    }
+
+    public static <T> List<T> queryResultByScrollId(JestClient client, String scrollId,
+            String scroll, Long size, Class<T> clazz) {
+        List<T> resultQuery = null;
+        try {
+            LOGGER.info("Try get result scroll");
+            SearchScroll searchScroll = new SearchScroll.Builder(scrollId, scroll).build();
+            JestResult result = client.execute(searchScroll);
+            resultQuery = resultToList(result, clazz);
+            LOGGER.info("result: {}", resultQuery);
+        } catch (IOException e) {
+            LOGGER.error("Error obtain... ", e);
+            resultQuery = new ArrayList<>();
+        }
+        return resultQuery;
+    }
+
+    public static <T> ScrollResponse<T> getScroll(JestClient client, String query, String index,
+            String type, String scroll, Long size, Class<T> clazz) {
+        ScrollResponse<T> resultScroll;
+        try {
+            Search search = new Search.Builder(query).addIndex(index).addType(type)
+                    .setParameter(Parameters.SCROLL, scroll).setParameter(Parameters.SIZE, size)
+                    .build();
+            JestResult result = client.execute(search);
+            resultScroll =
+                    new ScrollResponse<T>(result.getJsonObject().get("_scroll_id").getAsString(),
+                            resultToList(result, clazz));
+        } catch (Exception e) {
+            resultScroll = null;
+        }
+        return resultScroll;
     }
 
     public static <T> List<T> queryResult(JestClient client, String query, String index,
@@ -37,7 +74,7 @@ public class Util {
         List<T> resultQuery = null;
         try {
             Search search = new Search.Builder(query).addIndex(index).addType(type).build();
-            SearchResult result = client.execute(search);
+            JestResult result = client.execute(search);
             resultQuery = resultToList(result, clazz);
         } catch (IOException e) {
             resultQuery = new ArrayList<>();
@@ -59,11 +96,7 @@ public class Util {
         return resultQuery;
     }
 
-    @SuppressWarnings(
-            value = {
-                "deprecation"
-            })
-    public static <T> List<T> resultToList(SearchResult result, Class<T> clazz) {
+    public static <T> List<T> resultToList(JestResult result, Class<T> clazz) {
         return result.getSourceAsObjectList(clazz);
     }
 

@@ -5,7 +5,9 @@ import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -16,8 +18,9 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Repository;
 
 import com.leysoft.document.Product;
+import com.leysoft.dto.ScrollResponse;
 import com.leysoft.repository.inter.ProductRepository;
-import com.leysoft.util.Util;
+import com.leysoft.util.ElasticsearchUtil;
 
 import io.searchbox.client.JestClient;
 
@@ -36,6 +39,10 @@ public class ProductRepositoryImp implements ProductRepository {
             value = "${elasticsearch.type}")
     private String type;
 
+    @Value(
+            value = "${elasticsearch.scroll.minutes-to-live}")
+    private String scrollMinutesToLive;
+
     @Autowired
     private JestClient jestClient;
 
@@ -43,9 +50,30 @@ public class ProductRepositoryImp implements ProductRepository {
     private ResourceLoader resourceLoader;
 
     @Override
-    public List<Product> findByStoreId(String storeId) {
-        String query = Util.queryReplace(QUERY_FIND_BY_STORE_ID, storeId);
-        return Util.queryResult(jestClient, query, index, type, Product.class);
+    public List<Product> findAllByStoreId(String storeId) {
+        String query = ElasticsearchUtil.queryReplace(QUERY_FIND_BY_STORE_ID, storeId);
+        return ElasticsearchUtil.queryResult(jestClient, query, index, type, Product.class);
+    }
+
+    @Override
+    public List<Product> findAllByStoreIdScroll(String storeId, Long size) {
+        String query = ElasticsearchUtil.queryReplace(QUERY_FIND_BY_STORE_ID, storeId);
+        List<Product> result = new ArrayList<>();
+        ScrollResponse<Product> scroll = ElasticsearchUtil.getScroll(jestClient, query, index, type,
+                scrollMinutesToLive, size, Product.class);
+        result.addAll(scroll.getResults());
+        List<Product> temporalResult = new ArrayList<>();
+        do {
+            temporalResult = Objects.nonNull(scroll.getScrollId())
+                    ? ElasticsearchUtil.queryResultByScrollId(jestClient, scroll.getScrollId(),
+                            scrollMinutesToLive, size, Product.class)
+                    : Collections.emptyList();
+            if (!temporalResult.isEmpty()) {
+                result.addAll(temporalResult);
+            }
+        }
+        while (!temporalResult.isEmpty());
+        return result;
     }
 
     @Override
@@ -59,17 +87,17 @@ public class ProductRepositoryImp implements ProductRepository {
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         searchSourceBuilder.query(matchQuery).fetchSource(fields, null);
         String query = searchSourceBuilder.toString();
-        return Util.queryResult(jestClient, query, index, type);
+        return ElasticsearchUtil.queryResult(jestClient, query, index, type);
     }
 
     @Override
     public List<Product> findByNameAndLtePrice(String name, Double price, int from, int size) {
         List<Product> result = null;
         try {
-            String query =
-                    Util.loadFile(resourceLoader, "classpath:query/find_by_name_and_price.js");
-            query = Util.queryReplace(query, from, size, name, price);
-            result = Util.queryResult(jestClient, query, index, type);
+            String query = ElasticsearchUtil.loadFile(resourceLoader,
+                    "classpath:query/find_by_name_and_price.js");
+            query = ElasticsearchUtil.queryReplace(query, from, size, name, price);
+            result = ElasticsearchUtil.queryResult(jestClient, query, index, type);
         } catch (IOException e) {
             result = new ArrayList<>();
         }

@@ -1,10 +1,13 @@
 elasticsearch:
-  cluster-nodes: localhost:9300
-  index: hometype_store_products
-  type: product
+  cluster-nodes: http://localhost:9200
+  index: products
+  type: default
   multi-threaded: true
   default-max-connection: 2
   max-connection: 10
   time-out:
     read: 1000000
     connection: 1200000
+  scroll:
+    size: 2
+    minutes-to-live: 1m

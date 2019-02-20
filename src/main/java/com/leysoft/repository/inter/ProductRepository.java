@@ -7,7 +7,9 @@ import com.leysoft.document.Product;
 
 public interface ProductRepository {
 
-    public List<Product> findByStoreId(String storeId);
+    public List<Product> findAllByStoreId(String storeId);
+
+    public List<Product> findAllByStoreIdScroll(String storeId, Long size);
 
     public List<Product> findByStoreId(Long storeId);
 
